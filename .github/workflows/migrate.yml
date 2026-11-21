@@ -1,0 +1,59 @@
+name: migrate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  migrate:
+    name: migrate (${{ matrix.env }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { env: dev, docs: 2000 }
+          - { env: staging, docs: 20000 }
+          - { env: prod, docs: 100000 }
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Step names start with the environment, so the live diagram can follow each one separately
+      - name: "${{ matrix.env }}: Start Elasticsearch, seed data and start the app"
+        run: |
+          docker compose up -d --wait elasticsearch opensearch router
+          docker compose up -d dashboards
+          python3 scripts/seed.py ${{ matrix.docs }}
+          nohup python3 app/app.py http://localhost:8080 > app.log 2>&1 &
+          sleep 3
+          echo "App is writing through the router to Elasticsearch"
+
+      - name: "${{ matrix.env }}: Snapshot Elasticsearch"
+        run: bash scripts/migrate.sh snapshot
+
+      - name: "${{ matrix.env }}: Restore into OpenSearch"
+        run: bash scripts/migrate.sh restore
+
+      - name: "${{ matrix.env }}: Catch up new writes"
+        run: bash scripts/migrate.sh catchup
+
+      - name: "${{ matrix.env }}: Switch the router to OpenSearch"
+        run: bash scripts/migrate.sh switch
+
+      - name: "${{ matrix.env }}: Verify no data lost and no downtime"
+        run: sleep 3 && bash scripts/migrate.sh verify
+
+      - name: "${{ matrix.env }}: Import dashboards"
+        run: bash scripts/import_dashboards.sh
+
+      - name: Show logs on failure
+        if: failure()
+        run: |
+          cat app.log app-stats.json 2>/dev/null || true
+          docker compose ps; docker compose logs --tail 30

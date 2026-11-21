@@ -1,0 +1,4 @@
+.state/
+app-stats.json
+app.log
+__pycache__/
