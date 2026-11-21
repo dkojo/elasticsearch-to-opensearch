@@ -20,7 +20,7 @@ catch_up_since() {
   json -X POST "$OS/_reindex?wait_for_completion=true" -d "{
     \"source\": {\"remote\": {\"host\": \"http://elasticsearch:9200\"}, \"index\": \"$INDEX\",
                  \"query\": {\"range\": {\"@timestamp\": {\"gte\": $(( $1 - 5000 )), \"format\": \"epoch_millis\"}}}},
-    \"dest\": {\"index\": \"$INDEX\"}}" | python3 -c 'import json,sys; r=json.load(sys.stdin); print(f"copied {r[\"total\"]} documents written since then")'
+    \"dest\": {\"index\": \"$INDEX\"}}" | python3 -c 'import json,sys; r=json.load(sys.stdin); print("copied %d documents written since then" % r["total"])'
 }
 
 case "${1:-}" in
