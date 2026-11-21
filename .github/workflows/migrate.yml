@@ -27,6 +27,7 @@ jobs:
       # Step names start with the environment, so the live diagram can follow each one separately
       - name: "${{ matrix.env }}: Start Elasticsearch, seed data and start the app"
         run: |
+          mkdir -p snapshots && chmod 777 snapshots   # both clusters run as UID 1000 and share this folder
           docker compose up -d --wait elasticsearch opensearch router
           docker compose up -d dashboards
           python3 scripts/seed.py ${{ matrix.docs }}

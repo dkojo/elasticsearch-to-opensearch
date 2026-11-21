@@ -10,7 +10,7 @@ INDEX=logs-app
 STATE=.state
 mkdir -p "$STATE"
 
-json() { curl -sf -H 'Content-Type: application/json' "$@"; }
+json() { curl -sS --fail-with-body -H 'Content-Type: application/json' "$@"; }
 now_ms() { date +%s%3N; }
 count() { json -X POST "$1/$INDEX/_refresh" >/dev/null; json "$1/$INDEX/_count${2:-}" | python3 -c 'import json,sys; print(json.load(sys.stdin)["count"])'; }
 

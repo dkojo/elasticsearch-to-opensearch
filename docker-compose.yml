@@ -1,4 +1,4 @@
-# Old and new side by side, sharing one snapshot folder, with a router in front.
+# Old and new side by side, sharing one snapshot folder (./snapshots), with a router in front.
 # The app only ever talks to the router, so moving it from Elasticsearch to OpenSearch is one config reload.
 services:
   elasticsearch:
@@ -8,7 +8,7 @@ services:
       path.repo: /snapshots
       # -XX:-UseContainerSupport: the JDK bundled with 7.10 can't read cgroup v2 limits on modern hosts
       ES_JAVA_OPTS: -Xms512m -Xmx512m -XX:-UseContainerSupport
-    volumes: ["snapshots:/snapshots"]
+    volumes: ["./snapshots:/snapshots"]
     ports: ["9200:9200"]
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health?wait_for_status=yellow"]
@@ -25,7 +25,7 @@ services:
       DISABLE_SECURITY_PLUGIN: "true"                # local demo only
       DISABLE_INSTALL_DEMO_CONFIG: "true"
       OPENSEARCH_JAVA_OPTS: -Xms512m -Xmx512m
-    volumes: ["snapshots:/snapshots"]
+    volumes: ["./snapshots:/snapshots"]
     ports: ["9201:9200"]
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://localhost:9200/_cluster/health?wait_for_status=yellow"]
@@ -49,5 +49,3 @@ services:
     depends_on:
       elasticsearch: { condition: service_healthy }
 
-volumes:
-  snapshots:

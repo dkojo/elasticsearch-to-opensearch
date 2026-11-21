@@ -40,6 +40,7 @@ The app never sees an error, but the **Verify** step finds that the writes made 
 ## Run it on your machine
 
 ```bash
+mkdir -p snapshots && chmod 777 snapshots
 docker compose up -d --wait elasticsearch opensearch router && docker compose up -d dashboards
 python3 scripts/seed.py 2000
 python3 app/app.py http://localhost:8080 &
